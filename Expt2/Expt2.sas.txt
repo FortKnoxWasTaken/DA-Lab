@@ -1,0 +1,73 @@
+FILENAME REFFILE '/home/u62323111/lab3 EDA using SAS/credit_train.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=WORK.IMPORT;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=WORK.IMPORT; RUN;
+
+*Descriptive Statistics of our dataset-
+Here we will check the mean, median, mode, etc… for our dataset;
+proc means data=WORK.IMPORT mean median mode std var min max;
+run;
+
+*We will check the no. of missing values in each column.;
+proc means data=WORK.IMPORT nmiss;
+run;
+
+*We are checking for unique values in our dataset to get familiar with 
+how much value a variable truly holds out of all the records,
+which may help in normalizing the data if the values are too less.;
+/* Unique values for 5 columns */
+proc sql;
+select count(distinct 'Loan Status'n) as 'Loan Status'n,
+       count(distinct Bankruptcies) as Bankruptcies,
+       count(distinct Term) as Term,
+       count(distinct 'Credit Score'n) as 'Credit Score'n,
+       count(distinct 'Monthly Debt'n) as 'Monthly Debt'n
+  from WORK.IMPORT;
+quit;
+
+
+*let us get a sense of the data by visualizing it in the form of a histogram;
+/* You can give multiple variables in this procedure to create histograms */
+proc univariate data=WORK.IMPORT  novarcontents;
+histogram 'Current Loan Amount'n 'Credit Score'n / ;
+run;
+/* Creating histogram with only one variable (i.e Credit Score) */
+ods graphics / reset width=6.4in height=4.8in imagemap;
+proc sgplot data=WORK.IMPORT;
+	histogram 'Credit Score'n /;
+	yaxis grid;
+run;
+
+*let us try to vicualize the relationship between the variables useing a scatter plot;
+ods graphics / reset width=6.4in height=4.8in imagemap;
+proc sgplot data=WORK.IMPORT;
+	scatter x='Number of Open Accounts'n y='Current Credit Balance'n /;
+	xaxis grid;
+	yaxis grid;
+run;
+ods graphics / reset;
+
+*Let us now see as to how the variables are correlated with one another, 
+which will further help take important variables into account for model building.;
+ods noproctitle;
+ods graphics / imagemap=on;
+proc corr data=WORK.IMPORT pearson nosimple noprob plots=none;
+	var 'Current Loan Amount'n 'Credit Score'n 'Annual Income'n 'Monthly Debt'n 
+		'Years of Credit History'n 'Number of Open Accounts'n 
+		'Number of Credit Problems'n 'Current Credit Balance'n 'Maximum Open Credit'n 
+		Bankruptcies 'Tax Liens'n;
+run;
+
+*let us visualize the box plot to assess the outliers in our dataset for variables 
+as having outlier’s results in degrading our model performance and lack of accuracy.;
+ods graphics / reset width=6.4in height=4.8in imagemap;
+proc sgplot data=WORK.IMPORT;
+	vbox 'Credit Score'n  / category='Loan Status'n;
+	yaxis grid;
+run;
+ods graphics / reset;
